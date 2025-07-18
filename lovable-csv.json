@@ -1,0 +1,306 @@
+{
+  "name": "lovable-csv",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lovable-csv",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d7e733d2-292b-4a07-8c42-4bacec0d5a2b",
+      "name": "Webhook",
+      "webhookId": "e37f7563-8ebc-4c41-aad8-5e1604c538a8"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        640,
+        0
+      ],
+      "id": "7a774168-a62f-4096-94fe-878fafcc107a",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2d4c6b6d-e612-4f8a-a304-16ff593a5b30",
+              "name": "=question",
+              "value": "={{ $json.question }}",
+              "type": "string"
+            },
+            {
+              "id": "23209e87-da88-46f9-827a-5c2fe75fde06",
+              "name": "finalPrompt",
+              "value": "={{$json.question}} Based on this row: {{JSON.stringify($json)}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1100,
+        0
+      ],
+      "id": "614eece5-683d-4216-9c67-d15d6c6ea028",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a helpful data analyst. You will be given a CSV dataset and a natural language question. Answer the question by analyzing the CSV.\n\nCSV Data:\n\n{{ $json.finalPrompt }}\n\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1320,
+        0
+      ],
+      "id": "9942f790-d6e0-4a57-9609-b5f028b557a6",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ej9MSaUBishStl0L",
+          "name": "Instrovate OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"answer\": \"={{$json.message.content}}\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1680,
+        0
+      ],
+      "id": "2921cf98-2fd9-4000-8d5f-490f239bc84c",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Access top-level payload\nconst body = $json.body;\n\n// Check and extract file\nconst base64Full = body?.file;\nif (!base64Full) {\n  throw new Error('Missing base64 file in payload.');\n}\nconst base64 = base64Full.replace(/^data:text\\/csv;base64,/, '');\nconst fileName = body?.fileName || 'Uploaded.csv';\nconst question = body?.question || 'No question provided';\n\n// Output binary + json\nreturn [\n  {\n    binary: {\n      data: {\n        data: base64,\n        mimeType: 'text/csv',\n        fileName,\n      },\n    },\n    json: {\n      question,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "8b72684a-b311-4393-8faa-ab0a216638f4",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e0802d8-1c61-4455-ae77-3296fe6b8ba3",
+              "name": "question",
+              "value": "={{$json.question}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        -280
+      ],
+      "id": "f2c5dd31-bf3d-4401-ae9f-356f670e21a8",
+      "name": "question"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        840,
+        -180
+      ],
+      "id": "cf37cde4-33e2-4e09-bc18-cb506d55cfe8",
+      "name": "Merge Question to Rows"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "instrovate.app.n8n.cloud",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+            "content-length": "356",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "en-US,en;q=0.9",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "2400:80c0:200e:1eb:c0d:7bc1:27a2:cfb5",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "IN",
+            "cf-ray": "960e6491a43891a9-DEL",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "origin": "https://instrovate.com",
+            "priority": "u=1, i",
+            "referer": "https://instrovate.com/",
+            "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Google Chrome\";v=\"138\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "2400:80c0:200e:1eb:c0d:7bc1:27a2:cfb5, 172.68.39.250",
+            "x-forwarded-host": "instrovate.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-34-f494454b5-f88k9",
+            "x-is-trusted": "yes",
+            "x-real-ip": "2400:80c0:200e:1eb:c0d:7bc1:27a2:cfb5"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "file": "data:text/csv;base64,RW1wbG95ZWUgTmFtZSxEZXBhcnRtZW50LFBlcmZvcm1hbmNlIFNjb3JlLE1vbnRobHkgU2FsZXMsUXVhcnRlcg0KQWxpY2UgSm9obnNvbixTYWxlcyw4NywxNTAwMCxRMQ0KQm9iIFNtaXRoLE1hcmtldGluZyw5MiwyMjAwMCxRMQ0KQ2F0aHkgQnJvd24sRW5naW5lZXJpbmcsNzgsMTgwMDAsUTENCkRhdmlkIFdpbHNvbixIUiw4NSwwLFEx",
+            "fileName": "Employee.csv",
+            "question": "name of employee from sales "
+          },
+          "webhookUrl": "https://instrovate.app.n8n.cloud/webhook/lovable-csv",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Merge Question to Rows",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "question",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "question": {
+      "main": [
+        [
+          {
+            "node": "Merge Question to Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Question to Rows": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "398770eb-cc76-4394-b9ec-02172f02d579",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0a775ea93f4d5e9b73cdfc2dfed34139dca23e3fd288e188aa303d464431a721"
+  },
+  "id": "JFbfgNa9IQOJj2M5",
+  "tags": []
+}
